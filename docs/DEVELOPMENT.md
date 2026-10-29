@@ -8,14 +8,31 @@ Status as of 2026-10-29. No credentials appear in this document.
 - Default branch: `main`
 - Merge policy: squash merge only; head branches are deleted on merge.
 
-## Protection of `main` (ruleset `main`, active, no bypass actors)
+## Protection of `main`
+
+Ruleset `main` (id 26113601) is **active but targets no refs**
+(`conditions.ref_name.include` is empty), so GitHub currently applies **no
+rules** to `main` (`gh api repos/{owner}/{repo}/rules/branches/main` returns
+`[]`). Until the owner sets the target to the default branch, treat `main` as
+protected by convention only: never push to it directly, never force-push.
+
+Rules defined in the ruleset (enforced only once it targets `main`), with no
+bypass actors:
 
 - Deletion blocked; non-fast-forward (force) pushes blocked.
 - CodeQL code-scanning gate (errors and warnings; high or higher security alerts).
-- Copilot code review on push.
+- Copilot code review on push; draft pull requests are not reviewed.
 - Required status checks rule present with an empty check list.
 
 Do not change rulesets or repository settings without explicit owner approval.
+
+## Code scanning
+
+CodeQL runs from `.github/workflows/codeql.yml` on pull requests to `main`,
+pushes to `main`, weekly, and on demand. It currently analyzes the `actions`
+language only; add `python` to its matrix once Python sources exist. The
+code-scanning gate needs uploaded results, which requires code scanning to be
+enabled for this private repository (GitHub Code Security).
 
 ## Authentication
 
@@ -40,7 +57,8 @@ Minimum permissions for an automation identity (GitHub App or fine-grained token
 3. Commit small, meaningful changes (`type(scope): Summary`).
 4. Run the test suite locally before pushing.
 5. `git push -u origin <branch>`; never `--force` to `main`.
-6. `gh pr create --draft --base main`, then mark ready when checks pass.
+6. `gh pr create --draft --base main`; mark ready for review so Copilot
+   review and checks run.
 7. Merge only after review and owner authorization; squash merge.
 
 ## Never commit
