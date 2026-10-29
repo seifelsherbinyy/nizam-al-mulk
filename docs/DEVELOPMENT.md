@@ -101,9 +101,8 @@ Owner's explicit approval is required for any of:
 - Secrets or credentials in any file, regardless of path
 - Real financial or health records, private journals, production identifiers
 - Production or VPS deployment, scheduler activation, Drive writes
-- Force-pushes, history rewrites, or deleting branches. Interpretation: the
-  repository already deletes a PR head branch automatically on merge; that is
-  not counted as a deletion requiring approval.
+- Deleting or rewriting history: force-pushes, history rewrites, or deleting
+  any branch or tag by the AI developer.
 
 If anything is protected or ambiguous, do not merge; ask the owner.
 
