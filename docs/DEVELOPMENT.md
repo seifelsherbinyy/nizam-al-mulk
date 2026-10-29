@@ -1,38 +1,52 @@
 # Development workflow and repository access
 
-Status as of 2026-10-29. No credentials appear in this document.
+Status as of 2026-10-29 (updated after the ruleset import). No credentials
+appear in this document.
 
 ## Repository
 
-- Remote: `https://github.com/seifelsherbinyy/nizam-al-mulk` (private)
+- Remote: `https://github.com/seifelsherbinyy/nizam-al-mulk`
+- Visibility: **public, temporarily**, so CodeQL results can upload to code
+  scanning; the owner plans to make it private again after development.
 - Default branch: `main`
 - Merge policy: squash merge only; head branches are deleted on merge.
+- Security: secret scanning, push protection and Dependabot security updates
+  enabled.
 
 ## Protection of `main`
 
-Ruleset `main` (id 26113601) is **active but targets no refs**
-(`conditions.ref_name.include` is empty), so GitHub currently applies **no
-rules** to `main` (`gh api repos/{owner}/{repo}/rules/branches/main` returns
-`[]`). Until the owner sets the target to the default branch, treat `main` as
-protected by convention only: never push to it directly, never force-push.
+Ruleset `main-protection` (id 26117781) is active on the default branch
+(`~DEFAULT_BRANCH`) with no bypass actors. It was imported from
+`.github/rulesets/main-protection.public.json`; see `.github/rulesets/README.md`.
 
-Rules defined in the ruleset (enforced only once it targets `main`), with no
-bypass actors:
-
-- Deletion blocked; non-fast-forward (force) pushes blocked.
+- Deletion blocked; non-fast-forward (force) pushes blocked; linear history.
+- Pull request required: squash only, all conversations resolved, 0 approvals
+  (owner and AI developer share one account).
+- Required status check `Analyze (actions)` from GitHub Actions, branch up to
+  date with `main`.
 - CodeQL code-scanning gate (errors and warnings; high or higher security alerts).
 - Copilot code review on push; draft pull requests are not reviewed.
-- Required status checks rule present with an empty check list.
+
+Verified 2026-10-29: a direct push to `main` was rejected with `GH013`
+(pull request required, status check expected, code scanning results expected).
 
 Do not change rulesets or repository settings without explicit owner approval.
 
 ## Code scanning
 
 CodeQL runs from `.github/workflows/codeql.yml` on pull requests to `main`,
-pushes to `main`, weekly, and on demand. It currently analyzes the `actions`
-language only; add `python` to its matrix once Python sources exist. The
-code-scanning gate needs uploaded results, which requires code scanning to be
-enabled for this private repository (GitHub Code Security).
+pushes to `main`, weekly, and on demand. It analyzes the `actions` language
+only; add `python` to its matrix (and `Analyze (python)` to the ruleset's
+required checks) once Python sources exist.
+
+The workflow detects visibility at run time. When the repository is public it
+uploads results to code scanning. Otherwise it skips the upload, which a
+private personal-account repository cannot accept, and keeps the SARIF as a
+30-day workflow artifact.
+
+**Before making the repository private:** first replace the active ruleset
+with `.github/rulesets/main-protection.private.json`. The public ruleset's
+code-scanning rule would otherwise block every pull request.
 
 ## Authentication
 
