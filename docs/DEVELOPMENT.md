@@ -59,7 +59,55 @@ Minimum permissions for an automation identity (GitHub App or fine-grained token
 5. `git push -u origin <branch>`; never `--force` to `main`.
 6. `gh pr create --draft --base main`; mark ready for review so Copilot
    review and checks run.
-7. Merge only after review and owner authorization; squash merge.
+7. Merge according to the merge policy below; squash merge only.
+
+## Autonomous merge policy
+
+Approved by the owner on 2026-10-29. The AI developer may squash-merge its own
+pull request without further owner action only when **all** of these hold:
+
+1. Required checks pass and code scanning reports no blocking alerts
+   (enforced by ruleset `main-protection`).
+2. All review conversations are resolved (enforced by the ruleset).
+3. An independent verifier (`nizam-verifier`) has accepted the exact head
+   commit being merged. The author never accepts its own work; a rejection
+   returns the PR for fixes, and any later push voids the acceptance.
+4. No changed path is protected and the PR has no protected effect (below).
+5. Before merging, the AI posts a summary comment on the PR: what changed,
+   verification evidence, the accepted head commit and who accepted it.
+
+Merge command (fails if the head moved after acceptance):
+
+    gh pr merge <n> --squash --match-head-commit <accepted-sha>
+
+### Protected paths
+
+Owner's explicit approval per PR is required if `gh pr diff <n> --name-only`
+lists any path matching:
+
+- `.github/workflows/**`, `.github/actions/**`, `.github/rulesets/**`
+- `.github/CODEOWNERS`, `CODEOWNERS`, `.github/dependabot.yml`
+- `docs/DEVELOPMENT.md` (this policy and the access documentation)
+- `.env*` (except `.env.example`), `*.pem`, `*.key`, `*.p12`, `*.pfx`,
+  `id_rsa*`, `id_ecdsa*`, `id_ed25519*`, `**/secrets/**`, `**/credentials/**`
+- `**/finance/**`, `**/financial/**`, `**/health/**`, `**/clinical/**`,
+  `**/journal/**`, `**/journals/**`
+
+### Protected effects
+
+Owner's explicit approval is required for any of:
+
+- Repository settings, rulesets, visibility, collaborators or integrations
+- Secrets or credentials in any file, regardless of path
+- Real financial or health records, private journals, production identifiers
+- Production or VPS deployment, scheduler activation, Drive writes
+- Deleting or rewriting history: force-pushes, history rewrites, or deleting
+  any branch or tag by the AI developer.
+
+If anything is protected or ambiguous, do not merge; ask the owner.
+
+The ruleset cannot distinguish the owner from the AI developer (one account),
+so this policy is enforced by the AI developer's process, not by GitHub.
 
 ## Never commit
 
