@@ -1,5 +1,9 @@
 # Branch rulesets
 
+Changes to files in this directory are a protected path under the
+autonomous merge policy in `docs/DEVELOPMENT.md`: each PR needs the owner's
+explicit approval before merging.
+
 GitHub ruleset definitions for `main`, in the REST API body format
 (`POST /repos/{owner}/{repo}/rulesets`). Validated against GitHub's official
 OpenAPI description (`github/rest-api-description`).
