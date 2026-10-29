@@ -59,7 +59,41 @@ Minimum permissions for an automation identity (GitHub App or fine-grained token
 5. `git push -u origin <branch>`; never `--force` to `main`.
 6. `gh pr create --draft --base main`; mark ready for review so Copilot
    review and checks run.
-7. Merge only after review and owner authorization; squash merge.
+7. Merge according to the merge policy below; squash merge only.
+
+## Autonomous merge policy
+
+Approved by the owner on 2026-10-29. The AI developer may squash-merge its own
+pull request without further owner action only when **all** of these hold:
+
+1. Required checks pass and code scanning reports no blocking alerts
+   (enforced by ruleset `main-protection`).
+2. All review conversations are resolved (enforced by the ruleset).
+3. An independent verifier (`nizam-verifier`) has accepted the change. The
+   author never accepts its own work; a rejection returns the PR for fixes.
+4. The PR changes no protected path and has no protected effect (below).
+5. The PR gets a merge summary comment: what changed, verification evidence,
+   and who accepted it.
+
+Protected paths (owner's explicit approval per PR required):
+
+- `.github/workflows/**`, `.github/rulesets/**`, `.github/CODEOWNERS`
+- `docs/DEVELOPMENT.md` sections on access, rulesets or this policy
+- Any file holding or configuring secrets, credentials or keys
+
+Protected effects (owner's explicit approval required):
+
+- Repository settings, rulesets, visibility, collaborators or integrations
+- Financial or health records, private journals, production identifiers
+- Production or VPS deployment, scheduler activation, Drive writes
+- Deleting branches other than merged PR heads, force-pushes, history rewrites
+
+Check the paths before merging:
+`gh pr diff <n> --name-only`. If any path is protected, or the change is
+ambiguous, do not merge; ask the owner.
+
+The ruleset cannot distinguish the owner from the AI developer (one account),
+so this policy is enforced by the AI developer's process, not by GitHub.
 
 ## Never commit
 
