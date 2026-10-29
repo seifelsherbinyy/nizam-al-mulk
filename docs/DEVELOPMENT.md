@@ -69,28 +69,43 @@ pull request without further owner action only when **all** of these hold:
 1. Required checks pass and code scanning reports no blocking alerts
    (enforced by ruleset `main-protection`).
 2. All review conversations are resolved (enforced by the ruleset).
-3. An independent verifier (`nizam-verifier`) has accepted the change. The
-   author never accepts its own work; a rejection returns the PR for fixes.
-4. The PR changes no protected path and has no protected effect (below).
-5. The PR gets a merge summary comment: what changed, verification evidence,
-   and who accepted it.
+3. An independent verifier (`nizam-verifier`) has accepted the exact head
+   commit being merged. The author never accepts its own work; a rejection
+   returns the PR for fixes, and any later push voids the acceptance.
+4. No changed path is protected and the PR has no protected effect (below).
+5. Before merging, the AI posts a summary comment on the PR: what changed,
+   verification evidence, the accepted head commit and who accepted it.
 
-Protected paths (owner's explicit approval per PR required):
+Merge command (fails if the head moved after acceptance):
 
-- `.github/workflows/**`, `.github/rulesets/**`, `.github/CODEOWNERS`
-- `docs/DEVELOPMENT.md` sections on access, rulesets or this policy
-- Any file holding or configuring secrets, credentials or keys
+    gh pr merge <n> --squash --match-head-commit <accepted-sha>
 
-Protected effects (owner's explicit approval required):
+### Protected paths
+
+Owner's explicit approval per PR is required if `gh pr diff <n> --name-only`
+lists any path matching:
+
+- `.github/workflows/**`, `.github/actions/**`, `.github/rulesets/**`
+- `.github/CODEOWNERS`, `CODEOWNERS`, `.github/dependabot.yml`
+- `docs/DEVELOPMENT.md` (this policy and the access documentation)
+- `.env*` (except `.env.example`), `*.pem`, `*.key`, `*.p12`, `*.pfx`,
+  `id_rsa*`, `id_ecdsa*`, `id_ed25519*`, `**/secrets/**`, `**/credentials/**`
+- `**/finance/**`, `**/financial/**`, `**/health/**`, `**/clinical/**`,
+  `**/journal/**`, `**/journals/**`
+
+### Protected effects
+
+Owner's explicit approval is required for any of:
 
 - Repository settings, rulesets, visibility, collaborators or integrations
-- Financial or health records, private journals, production identifiers
+- Secrets or credentials in any file, regardless of path
+- Real financial or health records, private journals, production identifiers
 - Production or VPS deployment, scheduler activation, Drive writes
-- Deleting branches other than merged PR heads, force-pushes, history rewrites
+- Force-pushes, history rewrites, or deleting branches. Interpretation: the
+  repository already deletes a PR head branch automatically on merge; that is
+  not counted as a deletion requiring approval.
 
-Check the paths before merging:
-`gh pr diff <n> --name-only`. If any path is protected, or the change is
-ambiguous, do not merge; ask the owner.
+If anything is protected or ambiguous, do not merge; ask the owner.
 
 The ruleset cannot distinguish the owner from the AI developer (one account),
 so this policy is enforced by the AI developer's process, not by GitHub.
