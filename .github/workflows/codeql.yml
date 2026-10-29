@@ -1,0 +1,74 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # Add "python" here once the repository contains Python sources;
+        # CodeQL fails a language that has no source files.
+        language: [actions]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          queries: security-and-quality
+
+      - name: Detect repository visibility
+        id: visibility
+        timeout-minutes: 2
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail; private="$(gh api "repos/${GITHUB_REPOSITORY}" --jq .private)"; echo "private=${private}" >> "$GITHUB_OUTPUT"
+
+      # Upload results to code scanning only when the repository is confirmed
+      # public (fail-safe: any other value means never upload); code scanning
+      # is unavailable for private repos owned by a personal account.
+      # SARIF is always written to sarif-results. While the repository is not
+      # confirmed public it is kept as a private workflow artifact instead.
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          category: "/language:${{ matrix.language }}"
+          output: sarif-results
+          upload: ${{ steps.visibility.outputs.private == 'false' && 'always' || 'never' }}
+
+      - name: Upload SARIF artifact
+        if: ${{ !cancelled() && steps.visibility.outputs.private != 'false' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: codeql-sarif-${{ matrix.language }}
+          path: sarif-results
+          retention-days: 30
+          if-no-files-found: error
